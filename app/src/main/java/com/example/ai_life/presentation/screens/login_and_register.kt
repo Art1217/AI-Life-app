@@ -1,6 +1,7 @@
 package com.example.ai_life.presentation.screens
 
 import android.app.DatePickerDialog
+import android.util.Log
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -45,6 +46,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import android.widget.Toast
+import androidx.compose.foundation.layout.width
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
@@ -61,6 +63,8 @@ import com.example.ai_life.data.user.FirebaseUserRepository
 import com.example.ai_life.domain.model.User
 import com.example.ai_life.domain.usecase.RegisterUserUseCase
 import com.example.ai_life.domain.usecase.SaveUserUseCase
+import com.example.ai_life.domain.usecase.LoginUserUseCase
+import com.example.ai_life.domain.usecase.GetUserUseCase
 import com.example.ai_life.R
 import com.example.ai_life.presentation.screens.viewmodel.LoginViewModel
 import com.example.ai_life.presentation.screens.viewmodel.RegisterViewModel
@@ -150,8 +154,24 @@ fun TabSelector(selectedTab: String, onTabSelected: (String) -> Unit) {
 }
 
 @Composable
-fun LoginForm(viewModel: LoginViewModel){
-    Column(modifier = Modifier.padding(24.dp).fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
+fun LoginForm(
+    viewModel: LoginViewModel = viewModel()
+) {
+    val coroutineScope = rememberCoroutineScope()
+    val context = LocalContext.current
+
+    // Repos y casos de uso
+    val authRepo = remember { FirebaseAuthRepository() }
+    val loginUseCase = remember { LoginUserUseCase(authRepo) }
+    val userRepo = remember { FirebaseUserRepository() }
+    val getUserUseCase = remember { GetUserUseCase(userRepo) }
+
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(24.dp),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
         textFieldWithError(
             value = viewModel.email,
             onValueChange = { viewModel.email = it },
@@ -159,6 +179,7 @@ fun LoginForm(viewModel: LoginViewModel){
             error = viewModel.emailError,
             showError = viewModel.showErrors
         )
+
         Spacer(modifier = Modifier.height(16.dp))
 
         textFieldWithError(
@@ -170,36 +191,77 @@ fun LoginForm(viewModel: LoginViewModel){
         )
 
         Spacer(modifier = Modifier.height(8.dp))
-        Row {
+
+        Row(verticalAlignment = Alignment.CenterVertically) {
             Checkbox(
                 checked = viewModel.rememberMe,
                 onCheckedChange = { viewModel.rememberMe = it }
             )
-
+            Spacer(modifier = Modifier.width(4.dp))
             Text(
-                "Recordar", fontSize = 13.sp, fontWeight = FontWeight.Medium, modifier = Modifier.fillMaxWidth()
-                    .padding(top = 15.dp), color = Color(0xFF040A7E)
+                text = "Recordar",
+                fontSize = 13.sp,
+                fontWeight = FontWeight.Medium,
+                color = Color(0xFF040A7E)
             )
         }
-        Spacer(modifier = Modifier.padding(10.dp))
 
-        Button(onClick = {
-            viewModel.showErrors = true
-            if (viewModel.validate()) {
-            }
-        }, modifier = Modifier.fillMaxWidth().height(50.dp),
-            elevation = ButtonDefaults.buttonElevation(defaultElevation = 8.dp)
-            ,colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF040A7E),
-                contentColor = Color.White ))
-        {
-            Text("Acceder", fontSize = 17.sp, color=Color.White)
+        Spacer(modifier = Modifier.height(16.dp))
+
+        Button(
+            onClick = {
+                viewModel.showErrors = true
+                if (!viewModel.validate()) return@Button
+
+                coroutineScope.launch {
+                    try {
+                        // 1) Login en Firebase Auth y obtener UID real
+                        val uid = loginUseCase(viewModel.email, viewModel.password)
+                            .getOrThrow()
+                        Log.d("Login", "Auth exitoso, uid=$uid")
+
+                        // 2) Leer perfil en RTDB con ese mismo UID
+                        val user = getUserUseCase(uid)
+                            .getOrThrow()
+                            ?: throw Exception("No existe perfil para uid=$uid")
+                        Log.d("Login", "Usuario cargado: $user")
+
+                        Toast.makeText(
+                            context,
+                            "¡Bienvenido ${user.nombres}!",
+                            Toast.LENGTH_LONG
+                        ).show()
+                        // Aquí puedes navegar a la pantalla principal
+
+                    } catch (e: Exception) {
+                        // Muestra el error real de Firebase Auth o de RTDB
+                        Log.e("LoginError", "Error en login/getUser", e)
+                        Toast.makeText(
+                            context,
+                            e.localizedMessage ?: "Error desconocido",
+                            Toast.LENGTH_LONG
+                        ).show()
+                    }
+                }
+            },
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(50.dp),
+            elevation = ButtonDefaults.buttonElevation(defaultElevation = 8.dp),
+            colors = ButtonDefaults.buttonColors(
+                containerColor = Color(0xFF040A7E),
+                contentColor = Color.White
+            )
+        ) {
+            Text("Acceder", fontSize = 17.sp)
         }
     }
 }
 
-
 @Composable
-fun RegisterForm(viewModel: RegisterViewModel = viewModel()) {
+fun RegisterForm(
+    viewModel: RegisterViewModel = viewModel()
+) {
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -213,7 +275,8 @@ fun RegisterForm(viewModel: RegisterViewModel = viewModel()) {
             error = viewModel.errorNombres,
             showError = viewModel.showErrors
         )
-        Spacer(modifier = Modifier.padding(10.dp))
+        Spacer(modifier = Modifier.height(10.dp))
+
         textFieldWithError(
             value = viewModel.apellidos,
             onValueChange = { viewModel.apellidos = it },
@@ -221,11 +284,10 @@ fun RegisterForm(viewModel: RegisterViewModel = viewModel()) {
             error = viewModel.errorApellidos,
             showError = viewModel.showErrors
         )
-        Spacer(modifier = Modifier.padding(10.dp))
-        Row(modifier = Modifier.fillMaxWidth()) {
-            Box(modifier = Modifier
-                .weight(1f)
-            ) {
+        Spacer(modifier = Modifier.height(10.dp))
+
+        Row(Modifier.fillMaxWidth()) {
+            Box(Modifier.weight(1f)) {
                 textFieldWithError(
                     value = viewModel.dni,
                     onValueChange = { viewModel.dni = it },
@@ -234,29 +296,24 @@ fun RegisterForm(viewModel: RegisterViewModel = viewModel()) {
                     showError = viewModel.showErrors
                 )
             }
-            Spacer(modifier = Modifier.padding(10.dp))
-            Box(modifier = Modifier
-                .weight(1f)) {
+            Spacer(modifier = Modifier.width(10.dp))
+            Box(Modifier.weight(1f)) {
                 LocalidadDropdown(viewModel)
             }
         }
-        Spacer(modifier = Modifier.padding(10.dp))
-        Row(modifier = Modifier.fillMaxWidth()) {
-            Box(
-                modifier = Modifier
-                    .weight(1f)
-            ) {
+        Spacer(modifier = Modifier.height(10.dp))
+
+        Row(Modifier.fillMaxWidth()) {
+            Box(Modifier.weight(1f)) {
                 FechaNacimientoPicker(viewModel)
             }
-            Spacer(modifier = Modifier.padding(10.dp))
-            Box(
-                modifier = Modifier
-                    .weight(1f)
-            ) {
+            Spacer(modifier = Modifier.width(10.dp))
+            Box(Modifier.weight(1f)) {
                 SexoDropdown(viewModel)
             }
         }
-        Spacer(modifier = Modifier.padding(10.dp))
+        Spacer(modifier = Modifier.height(10.dp))
+
         textFieldWithError(
             value = viewModel.correo,
             onValueChange = { viewModel.correo = it },
@@ -264,7 +321,8 @@ fun RegisterForm(viewModel: RegisterViewModel = viewModel()) {
             error = viewModel.errorCorreo,
             showError = viewModel.showErrors
         )
-        Spacer(modifier = Modifier.padding(10.dp))
+        Spacer(modifier = Modifier.height(10.dp))
+
         textFieldWithError(
             value = viewModel.contrasena,
             onValueChange = { viewModel.contrasena = it },
@@ -272,11 +330,11 @@ fun RegisterForm(viewModel: RegisterViewModel = viewModel()) {
             error = viewModel.errorContrasena,
             showError = viewModel.showErrors
         )
-
         Spacer(modifier = Modifier.height(16.dp))
 
         val coroutineScope = rememberCoroutineScope()
         val context = LocalContext.current
+
         val authRepo = remember { FirebaseAuthRepository() }
         val userRepo = remember { FirebaseUserRepository() }
         val registerUseCase = remember { RegisterUserUseCase(authRepo) }
@@ -285,28 +343,51 @@ fun RegisterForm(viewModel: RegisterViewModel = viewModel()) {
         Button(
             onClick = {
                 viewModel.showErrors = true
-                if (viewModel.validar()) {
-                    coroutineScope.launch {
-                        val user = User(
-                            nombres = viewModel.nombres,
-                            apellidos = viewModel.apellidos,
-                            dni = viewModel.dni,
-                            localidad = viewModel.localidad,
-                            fechaNacimiento = viewModel.fechaNacimiento,
-                            sexo = viewModel.sexo,
-                            email = viewModel.correo
-                        )
-                        val authResult = registerUseCase(user, viewModel.contrasena)
-                        authResult.getOrNull()?.let { uid ->
-                            val saveResult = saveUserUseCase(user.copy(uid = uid))
-                            if (saveResult.isSuccess) {
-                                Toast.makeText(
-                                    context,
-                                    "Registro exitoso",
-                                    Toast.LENGTH_LONG
-                                ).show()
-                            }
-                        }
+                if (!viewModel.validar()) return@Button
+
+                coroutineScope.launch {
+                    try {
+                        // 1) Crear cuenta en Firebase Auth y obtener UID
+                        val uid = registerUseCase(
+                            User(
+                                uid             = "",                     // Importante: inicializado vacío
+                                nombres         = viewModel.nombres,
+                                apellidos       = viewModel.apellidos,
+                                dni             = viewModel.dni,
+                                localidad       = viewModel.localidad,
+                                fechaNacimiento = viewModel.fechaNacimiento,
+                                sexo            = viewModel.sexo,
+                                email           = viewModel.correo
+                            ),
+                            viewModel.contrasena
+                        ).getOrThrow()
+
+                        Log.d("Register", "Auth creado con uid=$uid")
+
+                        // 2) Guardar perfil en RTDB bajo ese mismo UID
+                        saveUserUseCase(
+                            User(
+                                uid             = uid,
+                                nombres         = viewModel.nombres,
+                                apellidos       = viewModel.apellidos,
+                                dni             = viewModel.dni,
+                                localidad       = viewModel.localidad,
+                                fechaNacimiento = viewModel.fechaNacimiento,
+                                sexo            = viewModel.sexo,
+                                email           = viewModel.correo
+                            )
+                        ).getOrThrow()
+
+                        Log.d("Register", "Perfil guardado en RTDB")
+                        Toast.makeText(context, "Registro exitoso", Toast.LENGTH_LONG).show()
+
+                    } catch (e: Exception) {
+                        Log.e("RegisterError", "Fallo al registrar", e)
+                        Toast.makeText(
+                            context,
+                            e.localizedMessage ?: "Error desconocido al registrar",
+                            Toast.LENGTH_LONG
+                        ).show()
                     }
                 }
             },

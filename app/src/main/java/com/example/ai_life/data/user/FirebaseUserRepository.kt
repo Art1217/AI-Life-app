@@ -15,4 +15,13 @@ class FirebaseUserRepository : UserRepository {
     } catch (e: Exception) {
         Result.failure(e)
     }
+
+    override suspend fun getUser(uid: String): Result<User?> = try {
+        val snapshot = usersRef.child(uid).get().await()
+        val user = snapshot.getValue(User::class.java)
+        Result.success(user)
+    } catch (e: Exception) {
+        Result.failure(e)
+    }
+
 }
