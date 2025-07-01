@@ -57,6 +57,8 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.rememberNavController
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.text.input.VisualTransformation
 import kotlinx.coroutines.launch
 import com.example.ai_life.data.auth.FirebaseAuthRepository
 import com.example.ai_life.data.user.FirebaseUserRepository
@@ -71,9 +73,11 @@ import com.example.ai_life.presentation.screens.viewmodel.RegisterViewModel
 import java.util.Calendar
 
 
+
 @Composable
 fun loginScreen (navController: NavHostController, initialTab: String = "Ingresar") {
     val loginViewModel: LoginViewModel = viewModel()
+    val registerViewModel: RegisterViewModel = viewModel()
     var selectedTab by remember { mutableStateOf(initialTab) }
     val scrollState = rememberScrollState()
     Box(modifier = Modifier.fillMaxSize().background(Color.White)) {
@@ -84,8 +88,8 @@ fun loginScreen (navController: NavHostController, initialTab: String = "Ingresa
             }
             Spacer(modifier = Modifier.height(20.dp))
             when (selectedTab) {
-                "Ingresar" -> LoginForm(viewModel = loginViewModel)
-                "Registrarte" -> RegisterForm()
+                "Ingresar" -> LoginForm(viewModel = loginViewModel, navController = navController)
+                "Registrarte" -> RegisterForm(viewModel = registerViewModel,navController = navController)
             }
         }
     }
@@ -155,7 +159,7 @@ fun TabSelector(selectedTab: String, onTabSelected: (String) -> Unit) {
 
 @Composable
 fun LoginForm(
-    viewModel: LoginViewModel = viewModel()
+    viewModel: LoginViewModel = viewModel(),navController: NavHostController
 ) {
     val coroutineScope = rememberCoroutineScope()
     val context = LocalContext.current
@@ -187,7 +191,8 @@ fun LoginForm(
             onValueChange = { viewModel.password = it },
             placeholder = "Contraseña",
             error = viewModel.passwordError,
-            showError = viewModel.showErrors
+            showError = viewModel.showErrors,
+            visualTransformation = PasswordVisualTransformation()
         )
 
         Spacer(modifier = Modifier.height(8.dp))
@@ -232,6 +237,9 @@ fun LoginForm(
                             Toast.LENGTH_LONG
                         ).show()
                         // Aquí puedes navegar a la pantalla principal
+                        navController.navigate("consulta") {
+                            popUpTo("login_register") { inclusive = true }
+                        }
 
                     } catch (e: Exception) {
                         // Muestra el error real de Firebase Auth o de RTDB
@@ -260,7 +268,7 @@ fun LoginForm(
 
 @Composable
 fun RegisterForm(
-    viewModel: RegisterViewModel = viewModel()
+    viewModel: RegisterViewModel = viewModel(),navController: NavHostController
 ) {
     Column(
         modifier = Modifier
@@ -328,7 +336,8 @@ fun RegisterForm(
             onValueChange = { viewModel.contrasena = it },
             placeholder = "Contraseña",
             error = viewModel.errorContrasena,
-            showError = viewModel.showErrors
+            showError = viewModel.showErrors,
+            visualTransformation = PasswordVisualTransformation()
         )
         Spacer(modifier = Modifier.height(16.dp))
 
@@ -406,7 +415,8 @@ fun textFieldWithError(
     onValueChange: (String) -> Unit,
     placeholder: String,
     error: String,
-    showError: Boolean
+    showError: Boolean,
+    visualTransformation: VisualTransformation = VisualTransformation.None
 ) {
     Column {
         TextField(
@@ -424,7 +434,8 @@ fun textFieldWithError(
                 unfocusedIndicatorColor = Color.Transparent
             ),
             textStyle = TextStyle(color = Color.Black),
-            singleLine = true
+            singleLine = true,
+            visualTransformation = visualTransformation
         )
         if (showError && error.isNotEmpty()) {
             Text(text = error, color = Color.Red, fontSize = 12.sp)
