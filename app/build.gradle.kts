@@ -60,6 +60,10 @@ dependencies {
     implementation(libs.firebase.auth.ktx)
     implementation("androidx.compose.material:material:1.6.1")
 
+    implementation(platform("com.google.firebase:firebase-bom:33.16.0"))
+    implementation("com.google.firebase:firebase-ml-modeldownloader")
+    implementation("org.tensorflow:tensorflow-lite:2.3.0")
+
 
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
@@ -68,4 +72,6 @@ dependencies {
     androidTestImplementation(libs.androidx.ui.test.junit4)
     debugImplementation(libs.androidx.ui.tooling)
     debugImplementation(libs.androidx.ui.test.manifest)
+
+
 }
