@@ -63,6 +63,8 @@ dependencies {
     implementation(platform("com.google.firebase:firebase-bom:33.16.0"))
     implementation("com.google.firebase:firebase-ml-modeldownloader")
     implementation("org.tensorflow:tensorflow-lite:2.3.0")
+    implementation("org.tensorflow:tensorflow-lite-support:0.3.1")
+
 
 
     testImplementation(libs.junit)
