@@ -94,8 +94,8 @@ fun ConsultaScreen(navController: NavHostController) {
 
         }
 
-        }
     }
+}
 
 @Composable
 fun ConsultaItem(navController: NavHostController) {
