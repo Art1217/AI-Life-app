@@ -11,17 +11,17 @@ import kotlinx.coroutines.launch
 
 class ConsultaViewModel : ViewModel() {
 
-    private val db = Firebase.database.reference.child("consultas")
+    // ⚠️ Si tus números están directamente bajo el root de la RTDB,
+    //    usa Firebase.database.reference.
+    //    Si están dentro de /consultas, haz Firebase.database.reference.child("consultas")
+    private val db = Firebase.database.reference
 
-    // 1) Código ingresado por el usuario
     private val _code = MutableStateFlow("")
     val code: StateFlow<String> = _code
 
-    // 2) Resultado de la búsqueda
     private val _consultas = MutableStateFlow<List<Consulta>>(emptyList())
     val consultas: StateFlow<List<Consulta>> = _consultas
 
-    // 3) Mensaje de estado (por ejemplo para errores o “no encontrado”)
     private val _status = MutableStateFlow<String?>(null)
     val status: StateFlow<String?> = _status
 
@@ -31,32 +31,40 @@ class ConsultaViewModel : ViewModel() {
 
     fun searchConsulta() {
         val lookup = code.value.trim()
-        if (lookup.isEmpty()) {
-            _status.value = "Ingresa un código"
-            _consultas.value = emptyList()
-            return
-        }
+        if (lookup.isEmpty()) { /* … */ }
 
-        viewModelScope.launch {
-            // limpiamos estado anterior
-            _status.value = "Buscando..."
-            _consultas.value = emptyList()
+        _status.value    = "Buscando..."
+        _consultas.value = emptyList()
 
-            db.child(lookup).get()
-                .addOnSuccessListener { snap ->
-                    val consulta = snap.getValue(Consulta::class.java)
-                    if (consulta != null) {
-                        // único resultado; si tu estructura almacena listas,
-                        // ajusta aquí para mapear children
-                        _consultas.value = listOf(consulta)
-                        _status.value = null
-                    } else {
-                        _status.value = "No se encontró la consulta"
+        db.child(lookup)
+            .get()
+            .addOnCompleteListener { task ->
+                if (task.isSuccessful) {
+                    val snap = task.result
+                    when {
+                        !snap.exists() -> _status.value = "No existe código \"$lookup\""
+                        else -> {
+                            try {
+                                val consulta = snap.getValue(Consulta::class.java)
+                                if (consulta != null) {
+                                    // inyectamos la clave en la propiedad code
+                                    consulta.code = snap.key ?: ""
+                                    _consultas.value = listOf(consulta)
+                                    _status.value    = null
+                                } else {
+                                    _status.value = "Los datos no coinciden con el modelo Consulta"
+                                }
+                            } catch (e: Exception) {
+                                _status.value = "Error al deserializar:\n${e.message}"
+                            }
+                        }
                     }
+                } else {
+                    _status.value = "Error Firebase:\n${task.exception?.message}"
                 }
-                .addOnFailureListener { e ->
-                    _status.value = "Error: ${e.localizedMessage}"
-                }
-        }
+            }
+            .addOnFailureListener {
+                _status.value = "Fallo red/permiso:\n${it.message}"
+            }
     }
 }

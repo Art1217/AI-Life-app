@@ -23,6 +23,8 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -33,10 +35,22 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.rememberNavController
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.IconButton
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.ai_life.R
+import com.example.ai_life.domain.model.Consulta
+import com.example.ai_life.presentation.screens.viewmodel.ConsultaViewModel
 
 @Composable
-fun ConsultaScreen(navController: NavHostController) {
+fun ConsultaScreen(
+    navController: NavHostController,
+    viewModel: ConsultaViewModel = viewModel()
+) {
+
+    val code by viewModel.code.collectAsState()
+    val consultas by viewModel.consultas.collectAsState()
+    val status by viewModel.status.collectAsState()
 
     Scaffold(
         modifier = Modifier.fillMaxSize(),
@@ -66,30 +80,28 @@ fun ConsultaScreen(navController: NavHostController) {
                 )
             }
             Spacer(modifier = Modifier.height(20.dp))
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .background(Color(0xFFF1F3FF), shape = RoundedCornerShape(12.dp))
-                    .padding(horizontal = 16.dp, vertical = 10.dp)
-            ) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Text(
-                        text = "Ingrese Código de Consulta",
-                        color = Color.Gray,
-                        modifier = Modifier.weight(1f)
-                    )
-                    Icon(
-                        imageVector = Icons.Default.Search,
-                        contentDescription = "Buscar",
-                        tint = Color.Gray
-                    )
+            OutlinedTextField(
+                value = code,
+                onValueChange = { viewModel.onCodeChange(it) },
+                placeholder = { Text("Ingrese Código de Consulta") },
+                modifier = Modifier.fillMaxWidth(),
+                singleLine = true,
+                trailingIcon = {
+                    IconButton(onClick = { viewModel.searchConsulta() }) {
+                        Icon(
+                            imageVector = Icons.Default.Search,
+                            contentDescription = "Buscar"
+                        )
+                    }
                 }
+            )
+            status?.let { msg ->
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(msg, color = Color.Gray)
             }
             Spacer(modifier = Modifier.height(30.dp))
-            repeat(2) {
-                ConsultaItem(navController)
+            consultas.forEach { consulta ->
+                ConsultaItem(navController, consulta)
             }
 
         }
@@ -98,17 +110,18 @@ fun ConsultaScreen(navController: NavHostController) {
 }
 
 @Composable
-fun ConsultaItem(navController: NavHostController) {
+fun ConsultaItem(navController: NavHostController, consulta: Consulta) {
     Column {
         Row(
             modifier = Modifier.fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Text(
-                text = "Fecha: DD/MM/AA",
-                fontSize = 16.sp,
-                modifier = Modifier.weight(1f)
-            )
+            Column(modifier = Modifier.weight(1f)) {
+                Text(text = "Código: ${consulta.code}", fontSize = 16.sp)
+                Text(text = "BPM: ${consulta.bpm}", fontSize = 16.sp)
+                Text(text = "SpO2: ${consulta.spo2}", fontSize = 16.sp)
+                Text(text = "Temp: ${consulta.temperatura}", fontSize = 16.sp)
+            }
             Button(
                 onClick = { navController.navigate("diagnostico") },
                 colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF040A7E)),
