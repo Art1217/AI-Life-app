@@ -41,6 +41,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.ai_life.R
 import com.example.ai_life.domain.model.Consulta
 import com.example.ai_life.presentation.screens.viewmodel.ConsultaViewModel
+import kotlin.math.absoluteValue
 
 @Composable
 fun ConsultaScreen(
@@ -123,8 +124,17 @@ fun ConsultaItem(navController: NavHostController, consulta: Consulta) {
                 Text(text = "Temp: ${consulta.temperatura}", fontSize = 16.sp)
             }
             Button(
-                onClick = { navController.navigate("diagnostico") },
-                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF040A7E)),
+                onClick = {
+                    // convierte temperatura a Float, porque en NavGraph la defines como FloatType
+                    // y la necesitas como Float en DiagnosticoScreen con 2 decimales
+                    // consulta.temperatura es Double, así que lo convertimos a Float
+                    val tempFloat = consulta.temperatura.toFloat().absoluteValue
+                        .let { "%.2f".format(it).toFloat() }
+
+                    navController.navigate(
+                        "diagnostico/${consulta.code}/${consulta.bpm}/${consulta.spo2}/$tempFloat"
+                    )
+                },                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF040A7E)),
                 shape = RoundedCornerShape(50),
                 contentPadding = PaddingValues(horizontal = 20.dp, vertical = 5.dp)
             ) {

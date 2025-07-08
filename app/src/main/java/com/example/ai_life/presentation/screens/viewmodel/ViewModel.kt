@@ -31,40 +31,39 @@ class ConsultaViewModel : ViewModel() {
 
     fun searchConsulta() {
         val lookup = code.value.trim()
-        if (lookup.isEmpty()) { /* … */ }
+        if (lookup.isEmpty()) {
+            _status.value = "Ingresa un código"
+            _consultas.value = emptyList()
+            return
+        }
 
-        _status.value    = "Buscando..."
+        _status.value = "Buscando..."
         _consultas.value = emptyList()
 
-        db.child(lookup)
-            .get()
-            .addOnCompleteListener { task ->
-                if (task.isSuccessful) {
-                    val snap = task.result
-                    when {
-                        !snap.exists() -> _status.value = "No existe código \"$lookup\""
-                        else -> {
-                            try {
-                                val consulta = snap.getValue(Consulta::class.java)
-                                if (consulta != null) {
-                                    // inyectamos la clave en la propiedad code
-                                    consulta.code = snap.key ?: ""
-                                    _consultas.value = listOf(consulta)
-                                    _status.value    = null
-                                } else {
-                                    _status.value = "Los datos no coinciden con el modelo Consulta"
-                                }
-                            } catch (e: Exception) {
-                                _status.value = "Error al deserializar:\n${e.message}"
-                            }
-                        }
+        db.child(lookup).get()
+            .addOnSuccessListener { snap ->
+                if (snap.exists()) {
+                    val bpm = snap.child("bpm").getValue(Int::class.java)
+                    val spo2 = snap.child("spo2").getValue(Int::class.java)
+                    val temp = snap.child("temperatura").getValue(Double::class.java)
+                    if (bpm != null && spo2 != null && temp != null) {
+                        val consulta = Consulta(
+                            code = lookup,
+                            bpm = bpm,
+                            spo2 = spo2,
+                            temperatura = temp
+                        )
+                        _consultas.value = listOf(consulta)
+                        _status.value = "Consulta encontrada"
+                    } else {
+                        _status.value = "Datos incompletos para el código $lookup"
                     }
                 } else {
-                    _status.value = "Error Firebase:\n${task.exception?.message}"
+                    _status.value = "No se encontró el código $lookup"
                 }
             }
-            .addOnFailureListener {
-                _status.value = "Fallo red/permiso:\n${it.message}"
+            .addOnFailureListener { e ->
+                _status.value = "Error al buscar: ${e.message}"
             }
     }
 }

@@ -1,3 +1,4 @@
+// app/src/main/java/com/example/ai_life/data/ml/InterpreterUtil.kt
 package com.example.ai_life.data.ml
 
 import org.tensorflow.lite.Interpreter
@@ -10,12 +11,16 @@ object InterpreterUtil {
     /**
      * Crea un Interpreter de TensorFlow Lite leyendo el archivo .tflite dado.
      */
-    fun createInterpreter(modelFile: File): Interpreter =
-        Interpreter(modelFile)
+    fun createInterpreter(modelFile: File): Interpreter {
+        val options = Interpreter.Options().apply {
+            setNumThreads(2)
+        }
+        return Interpreter(modelFile, options)
+    }
 
     /**
      * Ejecuta una inferencia nativa TFLite.
-     * @param interpreter intérprete creado
+     * @param interpreter intérprete ya creado
      * @param inputArray floatArrayOf(age, temperature, heart_rate, spo2)
      * @return índice de la clase con mayor probabilidad
      */
@@ -31,6 +36,8 @@ object InterpreterUtil {
 
         // ejecutamos inferencia
         interpreter.run(inputBuffer.buffer, outputBuffer.buffer.rewind())
+
+        // NO cerramos el interpreter aquí, lo reutilizaremos
 
         // leemos el array de scores y devolvemos el argmax
         val scores = outputBuffer.floatArray
