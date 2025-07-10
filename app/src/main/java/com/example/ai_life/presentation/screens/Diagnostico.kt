@@ -1,147 +1,144 @@
+// app/src/main/java/com/example/ai_life/presentation/screens/DiagnosticoScreen.kt
 package com.example.ai_life.presentation.screens
 
+import android.net.Uri
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.border
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.*
 import androidx.compose.material.Divider
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.MaterialTheme.typography
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.navigation.NavHostController
-import androidx.navigation.compose.rememberNavController
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.navigation.NavHostController
 import com.example.ai_life.R
 import com.example.ai_life.domain.model.Consulta
-import com.example.ai_life.presentation.screens.BottomNavPanel
+import com.example.ai_life.presentation.screens.viewmodel.DashboardViewModel
 import com.example.ai_life.presentation.screens.viewmodel.DiagnosticoViewModel
+import com.example.ai_life.presentation.util.Constants
 
 @Composable
 fun DiagnosticoScreen(
     navController: NavHostController,
-    consulta: Consulta,
-    viewModel: DiagnosticoViewModel = viewModel()
+    code: String,
+    bpm: Int,
+    spo2: Int,
+    temp: Float,
+    savedDiagnosis: String? = null,
+    savedTimestamp: String? = null,
+    savedRecommendation: String? = null,
+    diagViewModel: DiagnosticoViewModel = viewModel(),
+    dashViewModel: DashboardViewModel = viewModel()
 ) {
     val context = LocalContext.current
-    val resultIndex by viewModel.resultado.collectAsState()
-    val etiqueta by viewModel.diagnosticoEtiqueta.collectAsState()
-    val status by viewModel.status.collectAsState()
 
-    LaunchedEffect(Unit) {
-        viewModel.ejecutarDiagnostico(context, consulta)
+    // usuario
+    val nombreCompleto by dashViewModel.nombreCompleto.collectAsState()
+
+    // diagnóstico
+    val resultIndex by diagViewModel.resultado.collectAsState()
+    val etiqueta   by diagViewModel.diagnosticoEtiqueta.collectAsState()
+    val status     by diagViewModel.status.collectAsState()
+
+    LaunchedEffect(savedDiagnosis) {
+        if (savedDiagnosis == null) {
+            diagViewModel.ejecutarDiagnostico(
+                context,
+                Consulta(code = code, bpm = bpm, spo2 = spo2, temperatura = temp.toDouble())
+            )
+        }
     }
 
     Scaffold(
-        modifier = Modifier.fillMaxSize(),
         bottomBar = { BottomNavPanel(navController) }
-    ) { paddingValues ->
+    ) { padding ->
         Column(
             modifier = Modifier
                 .fillMaxSize()
+                .padding(padding)
                 .padding(16.dp)
         ) {
-            // Header
+            // Header dinámico
             Row(
-                modifier = Modifier.fillMaxWidth(),
+                modifier             = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
+                verticalAlignment    = Alignment.CenterVertically
             ) {
                 Image(
-                    painter = painterResource(R.drawable.logo),
-                    contentDescription = "Logo",
-                    modifier = Modifier.size(70.dp)
+                    painter           = painterResource(R.drawable.logo),
+                    contentDescription= "Logo",
+                    modifier          = Modifier.size(70.dp)
                 )
                 Text(
-                    text = "Nombre y Apellido",
-                    fontWeight = FontWeight.Bold,
-                    color = Color.Black,
-                    modifier = Modifier
-                        .border(1.dp, Color(0xFFBFE2FD))
-                        .padding(horizontal = 4.dp)
+                    text      = nombreCompleto.ifBlank { "Nombre y Apellido" },
+                    fontWeight= FontWeight.Bold,
+                    fontSize  = 18.sp,
+                    color     = Color.Black
                 )
             }
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // Muestra los datos de la consulta
+            // Fecha (modo lectura)
+            savedTimestamp?.let { ts ->
+                Text(
+                    text  = "Fecha: ${Uri.decode(ts)}",
+                    style = typography.bodyMedium
+                )
+                Spacer(modifier = Modifier.height(12.dp))
+            }
+
+            // Métricas
             Row(
-                modifier = Modifier.fillMaxWidth(),
+                modifier             = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
                 Column {
-                    Text("Temperatura: ${consulta.temperatura}", color = Color.Black)
-                    Spacer(modifier = Modifier.height(10.dp))
-                    Text("SpO₂: ${consulta.spo2}", color = Color.Black)
+                    Text("Temperatura: $temp", color = Color.Black)
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text("SpO₂: $spo2", color = Color.Black)
                 }
-                Text("Ritmo Cardiaco: ${consulta.bpm}", color = Color.Black)
+                Text("Ritmo Cardíaco: $bpm", color = Color.Black)
             }
 
             Divider(modifier = Modifier.padding(vertical = 16.dp))
 
-            // Sección de diagnóstico
+            // Diagnóstico
+            Text("Diagnóstico:", fontWeight = FontWeight.Bold, color = Color(0xFF040A7E))
+            Spacer(modifier = Modifier.height(8.dp))
+            val diagText = savedDiagnosis ?: etiqueta ?: "Resultado: clase $resultIndex"
             Text(
-                text = "Diagnóstico:",
-                fontWeight = FontWeight.Bold,
-                color = Color(0xFF040A7E)
-            )
-            Spacer(modifier = Modifier.height(10.dp))
-
-            // Ahora mostramos la etiqueta decodificada si existe, si no el índice o mensaje de carga
-            Text(
-                text = when {
-                    etiqueta != null -> etiqueta!!
-                    resultIndex != null -> "Resultado: clase $resultIndex"
-                    else -> "[ Sin resultado ]"
-                },
-                color = Color.Black,
+                text     = Uri.decode(diagText),
+                color    = Color.Black,
                 modifier = Modifier.padding(bottom = 16.dp)
             )
 
-            // Mensajes de estado intermedios
-            status?.let {
-                Text(it, color = Color.Gray)
+            if (savedDiagnosis == null) {
+                status?.let { Text(it, color = Color.Gray) }
+                Spacer(modifier = Modifier.height(16.dp))
+            } else {
+                Spacer(modifier = Modifier.height(24.dp))
             }
 
-            Spacer(modifier = Modifier.height(16.dp))
-
-            Text(
-                text = "Recomendación:",
-                fontWeight = FontWeight.Bold,
-                color = Color(0xFF040A7E)
-            )
-            Spacer(modifier = Modifier.height(10.dp))
-            Text(
-                text = "[Consulte con su médico]",
-                color = Color.Black
-            )
+            // Recomendación
+            Text("Recomendación:", fontWeight = FontWeight.Bold, color = Color(0xFF040A7E))
+            Spacer(modifier = Modifier.height(8.dp))
+            val recText = savedRecommendation
+                ?: Constants.DIAGNOSIS_RECOMMENDATIONS[diagText]
+                ?: "[Consulta con su médico]"
+            Text(recText, color = Color.Black)
         }
     }
-}
-
-@Composable
-@Preview
-fun PreviewDiagnostico() {
-    val navController = rememberNavController()
-    DiagnosticoScreen(
-        navController,
-        Consulta(code = "123", bpm = 80, spo2 = 95, temperatura = 36.5)
-    )
 }

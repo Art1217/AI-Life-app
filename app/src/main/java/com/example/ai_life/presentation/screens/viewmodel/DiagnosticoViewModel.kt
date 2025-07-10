@@ -9,14 +9,20 @@ import com.example.ai_life.data.ml.InterpreterUtil
 import com.example.ai_life.data.ml.ModelDownloaderUtil
 import com.example.ai_life.data.user.FirebaseUserRepository
 import com.example.ai_life.domain.model.Consulta
+import com.example.ai_life.domain.model.ConsultaHistorial
 import com.example.ai_life.domain.model.User
 import com.example.ai_life.presentation.util.Constants
 import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.database.ktx.database
+import com.google.firebase.ktx.Firebase
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 import org.tensorflow.lite.Interpreter
+import java.text.SimpleDateFormat
 import java.util.Calendar
+import java.util.Date
+import java.util.Locale
 
 class DiagnosticoViewModel(
     private val userRepo: FirebaseUserRepository = FirebaseUserRepository()
@@ -86,9 +92,65 @@ class DiagnosticoViewModel(
                 _diagnosticoEtiqueta.value = etiqueta
                 Log.d(TAG, "Etiqueta mapeada: $etiqueta")
 
+                val recomendacion = Constants.DIAGNOSIS_RECOMMENDATIONS[etiqueta]
+                    ?: "[Consulta con su médico]"
+
                 // 5) Resultado final
                 _status.value = "Diagnóstico: $etiqueta"
                 Log.d(TAG, "Diagnóstico completado: $etiqueta")
+
+                // 6) Guardar historial de la consulta bajo el usuario
+                _status.value = "Guardando historial..."
+                val timestamp = SimpleDateFormat(
+                    "yyyy-MM-dd HH:mm:ss",
+                    Locale.getDefault()
+                ).format(Date())
+
+                val registro = ConsultaHistorial(
+                    code       = consulta.code,
+                    bpm        = consulta.bpm,
+                    spo2       = consulta.spo2,
+                    temperatura= consulta.temperatura,
+                    diagnosis  = etiqueta,
+                    recommendation = recomendacion,
+                    timestamp  = timestamp
+                )
+                val histRef = Firebase
+                    .database
+                    .reference
+                    .child("users")
+                    .child(uid)
+                    .child("consultas_historial")
+
+                histRef
+                    .push()
+                    .setValue(registro)
+                    .addOnSuccessListener {
+                        Log.d(TAG, "Historial guardado correctamente")
+                        _status.value = "Historial guardado"
+
+                        /*// —— NUEVO: eliminar el nodo root/{code} ——
+                        Firebase.database
+                            .reference
+                            .child(consulta.code)
+                            .removeValue()
+                            .addOnSuccessListener {
+                                Log.d(TAG, "Consulta '${
+                                    consulta.code
+                                }' eliminada de root")
+                                _status.value = "Consulta eliminada de root"
+                            }
+                            .addOnFailureListener { e ->
+                                Log.e(TAG, "Error eliminando consulta root", e)
+                                _status.value = "Error eliminando consulta root"
+                            }
+                        */// ————————————————————————————————
+
+                    }
+                    .addOnFailureListener { e ->
+                        Log.e(TAG, "Error guardando historial", e)
+                        _status.value = "Error al guardar historial"
+                    }
 
             } catch (e: Exception) {
                 Log.e(TAG, "Error en diagnóstico", e)
