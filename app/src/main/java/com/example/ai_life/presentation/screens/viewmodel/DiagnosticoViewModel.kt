@@ -129,7 +129,6 @@ class DiagnosticoViewModel(
                         Log.d(TAG, "Historial guardado correctamente")
                         _status.value = "Historial guardado"
 
-                        /*// —— NUEVO: eliminar el nodo root/{code} ——
                         Firebase.database
                             .reference
                             .child(consulta.code)
@@ -144,8 +143,6 @@ class DiagnosticoViewModel(
                                 Log.e(TAG, "Error eliminando consulta root", e)
                                 _status.value = "Error eliminando consulta root"
                             }
-                        */// ————————————————————————————————
-
                     }
                     .addOnFailureListener { e ->
                         Log.e(TAG, "Error guardando historial", e)
