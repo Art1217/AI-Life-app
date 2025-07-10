@@ -11,17 +11,17 @@ import kotlinx.coroutines.launch
 
 class ConsultaViewModel : ViewModel() {
 
-    private val db = Firebase.database.reference.child("consultas")
+    // ⚠️ Si tus números están directamente bajo el root de la RTDB,
+    //    usa Firebase.database.reference.
+    //    Si están dentro de /consultas, haz Firebase.database.reference.child("consultas")
+    private val db = Firebase.database.reference
 
-    // 1) Código ingresado por el usuario
     private val _code = MutableStateFlow("")
     val code: StateFlow<String> = _code
 
-    // 2) Resultado de la búsqueda
     private val _consultas = MutableStateFlow<List<Consulta>>(emptyList())
     val consultas: StateFlow<List<Consulta>> = _consultas
 
-    // 3) Mensaje de estado (por ejemplo para errores o “no encontrado”)
     private val _status = MutableStateFlow<String?>(null)
     val status: StateFlow<String?> = _status
 
@@ -37,26 +37,33 @@ class ConsultaViewModel : ViewModel() {
             return
         }
 
-        viewModelScope.launch {
-            // limpiamos estado anterior
-            _status.value = "Buscando..."
-            _consultas.value = emptyList()
+        _status.value = "Buscando..."
+        _consultas.value = emptyList()
 
-            db.child(lookup).get()
-                .addOnSuccessListener { snap ->
-                    val consulta = snap.getValue(Consulta::class.java)
-                    if (consulta != null) {
-                        // único resultado; si tu estructura almacena listas,
-                        // ajusta aquí para mapear children
+        db.child(lookup).get()
+            .addOnSuccessListener { snap ->
+                if (snap.exists()) {
+                    val bpm = snap.child("bpm").getValue(Int::class.java)
+                    val spo2 = snap.child("spo2").getValue(Int::class.java)
+                    val temp = snap.child("temperatura").getValue(Double::class.java)
+                    if (bpm != null && spo2 != null && temp != null) {
+                        val consulta = Consulta(
+                            code = lookup,
+                            bpm = bpm,
+                            spo2 = spo2,
+                            temperatura = temp
+                        )
                         _consultas.value = listOf(consulta)
-                        _status.value = null
+                        _status.value = "Consulta encontrada"
                     } else {
-                        _status.value = "No se encontró la consulta"
+                        _status.value = "Datos incompletos para el código $lookup"
                     }
+                } else {
+                    _status.value = "No se encontró el código $lookup"
                 }
-                .addOnFailureListener { e ->
-                    _status.value = "Error: ${e.localizedMessage}"
-                }
-        }
+            }
+            .addOnFailureListener { e ->
+                _status.value = "Error al buscar: ${e.message}"
+            }
     }
 }
