@@ -1,30 +1,14 @@
+// app/src/main/java/com/example/ai_life/presentation/screens/ConsultaScreen.kt
 package com.example.ai_life.presentation.screens
 
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.Divider
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Search
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.Icon
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -33,11 +17,9 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.rememberNavController
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.IconButton
-import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.ai_life.R
 import com.example.ai_life.domain.model.Consulta
 import com.example.ai_life.presentation.screens.viewmodel.ConsultaViewModel
@@ -48,22 +30,20 @@ fun ConsultaScreen(
     navController: NavHostController,
     viewModel: ConsultaViewModel = viewModel()
 ) {
-
     val code by viewModel.code.collectAsState()
     val consultas by viewModel.consultas.collectAsState()
     val status by viewModel.status.collectAsState()
 
     Scaffold(
         modifier = Modifier.fillMaxSize(),
-        bottomBar = {
-            BottomNavPanel(navController)
-        }
+        bottomBar = { BottomNavPanel(navController) }
     ) { paddingValues ->
-        Column (
+        Column(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(16.dp)
-        ){
+        ) {
+            // Cabecera con logo y nombre
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -80,7 +60,10 @@ fun ConsultaScreen(
                     fontSize = 18.sp
                 )
             }
+
             Spacer(modifier = Modifier.height(20.dp))
+
+            // Campo de ingreso de código y lupa
             OutlinedTextField(
                 value = code,
                 onValueChange = { viewModel.onCodeChange(it) },
@@ -88,25 +71,50 @@ fun ConsultaScreen(
                 modifier = Modifier.fillMaxWidth(),
                 singleLine = true,
                 trailingIcon = {
-                    IconButton(onClick = { viewModel.searchConsulta() }) {
+                    IconButton(onClick = {
+                        // Al presionar lupa, dispara la búsqueda…
+                        viewModel.searchConsulta()
+                    }) {
                         Icon(
                             imageVector = Icons.Default.Search,
-                            contentDescription = "Buscar"
+                            contentDescription = "Buscar y diagnosticar"
                         )
                     }
                 }
             )
+
+            // Mostrar estado de la búsqueda
             status?.let { msg ->
                 Spacer(modifier = Modifier.height(8.dp))
                 Text(msg, color = Color.Gray)
             }
+
             Spacer(modifier = Modifier.height(30.dp))
+
+            // Cuando la lista de consultas se actualiza, navegamos automáticamente
+            LaunchedEffect(consultas) {
+                if (consultas.isNotEmpty()) {
+                    val consulta = consultas.first()
+                    // Formatear temperatura a Float con dos decimales
+                    val tempFloat = consulta.temperatura
+                        .toFloat()
+                        .absoluteValue
+                        .let { "%.2f".format(it).toFloat() }
+
+                    // Navegar a la pantalla de diagnóstico
+                    navController.navigate(
+                        "diagnostico/${consulta.code}/${consulta.bpm}/${consulta.spo2}/$tempFloat"
+                    )
+                    // Limpiar para no volver a navegar en recomposiciones
+                    viewModel.clearConsultas()
+                }
+            }
+
+            // Seguimos mostrando el ítem de consulta y el botón "Ver" para uso futuro
             consultas.forEach { consulta ->
                 ConsultaItem(navController, consulta)
             }
-
         }
-
     }
 }
 
@@ -125,29 +133,28 @@ fun ConsultaItem(navController: NavHostController, consulta: Consulta) {
             }
             Button(
                 onClick = {
-                    // convierte temperatura a Float, porque en NavGraph la defines como FloatType
-                    // y la necesitas como Float en DiagnosticoScreen con 2 decimales
-                    // consulta.temperatura es Double, así que lo convertimos a Float
-                    val tempFloat = consulta.temperatura.toFloat().absoluteValue
+                    // Botón "Ver" reservado para futura funcionalidad
+                    val tempFloat = consulta.temperatura
+                        .toFloat()
+                        .absoluteValue
                         .let { "%.2f".format(it).toFloat() }
-
                     navController.navigate(
                         "diagnostico/${consulta.code}/${consulta.bpm}/${consulta.spo2}/$tempFloat"
                     )
-                },                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF040A7E)),
+                },
+                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF040A7E)),
                 shape = RoundedCornerShape(50),
                 contentPadding = PaddingValues(horizontal = 20.dp, vertical = 5.dp)
             ) {
                 Text("Ver", color = Color.White)
             }
-
         }
         Divider(modifier = Modifier.padding(vertical = 16.dp))
     }
 }
 
+@Preview(showBackground = true)
 @Composable
-@Preview
 fun PreviewConsulta() {
     val navController = rememberNavController()
     ConsultaScreen(navController)

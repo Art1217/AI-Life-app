@@ -66,4 +66,7 @@ class ConsultaViewModel : ViewModel() {
                 _status.value = "Error al buscar: ${e.message}"
             }
     }
+    fun clearConsultas() {
+        _consultas.value = emptyList()
+    }
 }
