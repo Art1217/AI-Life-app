@@ -12,10 +12,10 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -35,20 +35,25 @@ import com.example.ai_life.R
 import com.example.ai_life.domain.model.Consulta
 import com.example.ai_life.domain.model.ConsultaHistorial
 import com.example.ai_life.presentation.screens.viewmodel.ConsultaViewModel
+import com.example.ai_life.presentation.screens.viewmodel.DashboardViewModel
 import kotlin.math.absoluteValue
 
 @Composable
 fun ConsultaScreen(
     navController: NavHostController,
-    viewModel: ConsultaViewModel = viewModel()
+    viewModel: ConsultaViewModel = viewModel(),
+    dashboardViewModel: DashboardViewModel = viewModel()
 ) {
-    val code by viewModel.code.collectAsState()
-    val consultas by viewModel.consultas.collectAsState()
-    val status by viewModel.status.collectAsState()
-    val historial by viewModel.historial.collectAsState()
+    // Datos de usuario desde DashboardViewModel
+    val nombreCompleto by dashboardViewModel.nombreCompleto.collectAsState()
+
+    val code       by viewModel.code.collectAsState()
+    val consultas  by viewModel.consultas.collectAsState()
+    val status     by viewModel.status.collectAsState()
+    val historial  by viewModel.historial.collectAsState()
 
     Scaffold(
-        modifier = Modifier.fillMaxSize(),
+        modifier  = Modifier.fillMaxSize(),
         bottomBar = { BottomNavPanel(navController) }
     ) { paddingValues ->
         Column(
@@ -56,21 +61,21 @@ fun ConsultaScreen(
                 .fillMaxSize()
                 .padding(16.dp)
         ) {
-            // Cabecera
+            // Cabecera con nombre dinámico
             Row(
-                modifier = Modifier.fillMaxWidth(),
+                modifier             = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
+                verticalAlignment    = Alignment.CenterVertically
             ) {
                 Image(
-                    painter = painterResource(R.drawable.logo),
+                    painter           = painterResource(R.drawable.logo),
                     contentDescription = "Logo",
-                    modifier = Modifier.size(70.dp)
+                    modifier          = Modifier.size(70.dp)
                 )
                 Text(
-                    text = "Nombre y Apellido",
+                    text       = nombreCompleto.ifBlank { "Nombre y Apellido" },
                     fontWeight = FontWeight.Bold,
-                    fontSize = 18.sp
+                    fontSize   = 18.sp
                 )
             }
 
@@ -78,15 +83,15 @@ fun ConsultaScreen(
 
             // Ingreso de código + lupa
             OutlinedTextField(
-                value = code,
+                value         = code,
                 onValueChange = { viewModel.onCodeChange(it) },
-                placeholder = { Text("Ingrese Código de Consulta") },
-                modifier = Modifier.fillMaxWidth(),
-                singleLine = true,
-                trailingIcon = {
+                placeholder   = { Text("Ingrese Código de Consulta") },
+                modifier      = Modifier.fillMaxWidth(),
+                singleLine    = true,
+                trailingIcon  = {
                     IconButton(onClick = { viewModel.searchConsulta() }) {
                         Icon(
-                            imageVector = Icons.Default.Search,
+                            imageVector     = Icons.Default.Search,
                             contentDescription = "Buscar y diagnosticar"
                         )
                     }
@@ -104,7 +109,7 @@ fun ConsultaScreen(
             // 1) Al encontrar la consulta root → navegar a diagnóstico
             LaunchedEffect(consultas) {
                 if (consultas.isNotEmpty()) {
-                    val c = consultas.first()
+                    val c     = consultas.first()
                     val tempF = c.temperatura.toFloat()
                         .absoluteValue
                         .let { "%.2f".format(it).toFloat() }
@@ -115,7 +120,7 @@ fun ConsultaScreen(
 
             // 2) Listado del historial guardado
             Text(
-                text = "Historial de Diagnósticos",
+                text  = "Historial de Diagnósticos",
                 style = MaterialTheme.typography.titleMedium
             )
             Spacer(modifier = Modifier.height(8.dp))
@@ -127,48 +132,15 @@ fun ConsultaScreen(
 }
 
 @Composable
-fun ConsultaItem(navController: NavHostController, consulta: Consulta) {
-    Column {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Column(modifier = Modifier.weight(1f)) {
-                Text(text = "Código: ${consulta.code}", fontSize = 16.sp)
-                Text(text = "BPM: ${consulta.bpm}", fontSize = 16.sp)
-                Text(text = "SpO2: ${consulta.spo2}", fontSize = 16.sp)
-                Text(text = "Temp: ${consulta.temperatura}", fontSize = 16.sp)
-            }
-            Button(
-                onClick = {
-                    val tempF = consulta.temperatura.toFloat()
-                        .absoluteValue
-                        .let { "%.2f".format(it).toFloat() }
-                    navController.navigate(
-                        "diagnostico/${consulta.code}/${consulta.bpm}/${consulta.spo2}/$tempF"
-                    )
-                },
-                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF040A7E)),
-                shape = RoundedCornerShape(50),
-                contentPadding = PaddingValues(horizontal = 20.dp, vertical = 5.dp)
-            ) {
-                Text("Ver", color = Color.White)
-            }
-        }
-        Divider(modifier = Modifier.padding(vertical = 16.dp))
-    }
-}
-
-@Composable
 fun HistorialItem(
     navController: NavHostController,
     h: ConsultaHistorial
 ) {
     Row(
-        modifier = Modifier
+        modifier           = Modifier
             .fillMaxWidth()
             .padding(vertical = 8.dp),
-        verticalAlignment = Alignment.CenterVertically
+        verticalAlignment  = Alignment.CenterVertically
     ) {
         Text("Fecha: ${h.timestamp}", Modifier.weight(1f))
         Button(
@@ -183,9 +155,9 @@ fun HistorialItem(
                             "$diagEnc/$recEnc/$tsEnc"
                 )
             },
-            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF040A7E)),
-            shape = RoundedCornerShape(50),
-            contentPadding = PaddingValues(horizontal = 20.dp, vertical = 5.dp)
+            colors        = ButtonDefaults.buttonColors(containerColor = Color(0xFF040A7E)),
+            shape         = RoundedCornerShape(50),
+            contentPadding= PaddingValues(horizontal = 20.dp, vertical = 5.dp)
         ) {
             Text("Ver", color = Color.White)
         }

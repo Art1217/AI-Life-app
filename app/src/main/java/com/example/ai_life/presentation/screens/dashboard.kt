@@ -27,6 +27,7 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.compose.material.BottomNavigationItem
 import androidx.compose.material.BottomNavigation
 import androidx.compose.material3.Text
+import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.focusModifier
 import androidx.compose.ui.input.pointer.motionEventSpy
@@ -37,20 +38,40 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.sp
 import androidx.navigation.compose.rememberNavController
 import com.example.ai_life.R
+import com.example.ai_life.presentation.screens.viewmodel.DashboardViewModel
+import androidx.lifecycle.viewmodel.compose.viewModel
 
 @Composable
-fun dashboardScreen(navController: NavHostController) {
+fun dashboardScreen(navController: NavHostController, viewModel: DashboardViewModel = viewModel()
+) {
+    val nombre    by viewModel.nombreCompleto.collectAsState()
+    val localidad by viewModel.localidad.collectAsState()
+    val dni       by viewModel.dni.collectAsState()
+    val status    by viewModel.status.collectAsState()
     Scaffold(
         modifier = Modifier.fillMaxSize(),
         bottomBar = {
             BottomNavPanel(navController)
         }
     ) { paddingValues ->
-        Column(modifier = Modifier.padding(paddingValues).background(Color.White).fillMaxSize()) {
-            encabezado(modifier = Modifier.weight(1f))
-            Text("Localidad: ", modifier = Modifier.padding(start = 20.dp, end = 20.dp))
+        Column(
+            modifier = Modifier
+                .padding(paddingValues)
+                .background(Color.White)
+                .fillMaxSize()
+        ) {
+            encabezado(nombre, Modifier.weight(1f))
+            Text(
+                text     = "Localidad: $localidad",
+                fontSize = 16.sp,
+                modifier = Modifier.padding(horizontal = 20.dp)
+            )
             Spacer(modifier = Modifier.padding(10.dp))
-            Text("DNI: ",modifier = Modifier.padding(start = 20.dp, end = 20.dp))
+            Text(
+                text     = "DNI: $dni",
+                fontSize = 16.sp,
+                modifier = Modifier.padding(horizontal = 20.dp)
+            )
             Spacer(modifier = Modifier.padding(10.dp))
             Row(modifier = Modifier.weight(2f).padding(20.dp).fillMaxSize()) {
                 Box(modifier = Modifier.weight(1f).fillMaxSize()){
@@ -111,57 +132,77 @@ fun dashboardScreen(navController: NavHostController) {
     }
 }
 @Composable
-fun encabezado(modifier: Modifier){
-    Column (modifier =Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally){
-        val logoApp = painterResource(id=R.drawable.logo)
-        Spacer(modifier= Modifier.padding(20.dp))
+fun encabezado(name: String, modifier: Modifier = Modifier) {
+    Column(
+        modifier            = modifier
+            .fillMaxWidth()
+            .padding(top = 20.dp),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        val logo = painterResource(id = R.drawable.logo)
         Image(
-            painter = logoApp,
-            contentDescription = null,
-            contentScale = ContentScale.FillBounds,
-
+            painter           = logo,
+            contentDescription= null,
+            modifier          = Modifier
+                .size(70.dp)
+                .clip(CircleShape)
         )
-        Spacer(modifier= Modifier.padding(10.dp))
-        Text("Nombre y Apellido", fontWeight = FontWeight.SemiBold, fontSize = 18.sp, color = Color.Black)
-        Spacer(modifier= Modifier.padding(10.dp))
+        Spacer(modifier = Modifier.height(10.dp))
+        Text(
+            text      = name.ifBlank { "Nombre y Apellido" },
+            fontWeight= FontWeight.SemiBold,
+            fontSize  = 18.sp,
+            color     = Color.Black
+        )
+        Spacer(modifier = Modifier.height(10.dp))
     }
 }
 
 @Composable
-fun BottomNavPanel(navController: NavHostController, modifier: Modifier = Modifier) {
+fun BottomNavPanel(navController: NavHostController) {
     val navBackStackEntry by navController.currentBackStackEntryAsState()
-    val currentRoute = navBackStackEntry?.destination?.route
+    val currentRoute      = navBackStackEntry?.destination?.route
+
     BottomNavigation(
-        modifier = Modifier.fillMaxWidth(), backgroundColor = Color(0xFF040A7E)
+        modifier        = Modifier.fillMaxWidth(),
+        backgroundColor = Color(0xFF040A7E)
     ) {
         BottomNavigationItem(
             selected = currentRoute == "dashboard",
-            onClick = { navController.navigate("dashboard")},
-            icon = {
-                Icon(painter = painterResource(R.drawable.hospital_1), contentDescription = "Dashboard"
-                    ,tint = Color.Unspecified, modifier = Modifier.size(30.dp))
-
+            onClick  = { navController.navigate("dashboard") },
+            icon     = {
+                Icon(
+                    painter           = painterResource(R.drawable.hospital_1),
+                    contentDescription= "Dashboard",
+                    tint              = Color.Unspecified,
+                    modifier          = Modifier.size(30.dp)
+                )
             }
         )
         BottomNavigationItem(
             selected = currentRoute == "consulta",
-            onClick = {  navController.navigate("consulta") },
-            icon = {
-                Icon(painter = painterResource(R.drawable.casa_blanca__2__1), contentDescription = "Consulta"
-                    ,tint = Color.Unspecified, modifier = Modifier.size(30.dp))
+            onClick  = { navController.navigate("consulta") },
+            icon     = {
+                Icon(
+                    painter           = painterResource(R.drawable.casa_blanca__2__1),
+                    contentDescription= "Consulta",
+                    tint              = Color.Unspecified,
+                    modifier          = Modifier.size(30.dp)
+                )
             }
         )
         BottomNavigationItem(
             selected = currentRoute == "perfil",
-            onClick = { navController.navigate("perfil") },
-            icon = {
-                    Icon(
-                        painter = painterResource(R.drawable.usuario_1), contentDescription = "Perfil",
-                        tint = Color.Unspecified, modifier = Modifier.size(30.dp)
-                    )
+            onClick  = { navController.navigate("perfil") },
+            icon     = {
+                Icon(
+                    painter           = painterResource(R.drawable.usuario_1),
+                    contentDescription= "Perfil",
+                    tint              = Color.Unspecified,
+                    modifier          = Modifier.size(30.dp)
+                )
             }
         )
-
     }
 }
 
