@@ -47,7 +47,12 @@ fun dashboardScreen(navController: NavHostController, viewModel: DashboardViewMo
     val nombre    by viewModel.nombreCompleto.collectAsState()
     val localidad by viewModel.localidad.collectAsState()
     val dni       by viewModel.dni.collectAsState()
-    val status    by viewModel.status.collectAsState()
+    // obtener estadísticas
+    val enfermedad by viewModel.enfermedadMasComun.collectAsState()
+    val sexo       by viewModel.sexoMasPropenso.collectAsState()
+    val edadMin    by viewModel.edadMin.collectAsState()
+    val edadMax    by viewModel.edadMax.collectAsState()
+
     Scaffold(
         modifier = Modifier.fillMaxSize(),
         bottomBar = {
@@ -76,53 +81,53 @@ fun dashboardScreen(navController: NavHostController, viewModel: DashboardViewMo
             Row(modifier = Modifier.weight(2f).padding(20.dp).fillMaxSize()) {
                 Box(modifier = Modifier.weight(1f).fillMaxSize()){
                     Column(modifier = Modifier.fillMaxSize(), horizontalAlignment = Alignment.CenterHorizontally){
-                        Text("Enfermedad más común", fontWeight = FontWeight.SemiBold, fontSize = 14.sp, textAlign = TextAlign.Center)
-                        Spacer(modifier = Modifier.padding(10.dp))
-                        val image1 = painterResource(id = R.drawable.gripe)
-                        Image(
-                                painter = image1,
-                                contentDescription = null,
-                                contentScale = ContentScale.FillBounds,
-                                modifier = Modifier
-                                    .size(150.dp)
-                                    .clip(CircleShape)
-                                    .border(2.dp, Color.Black, CircleShape)
-
-                            )
-
+                        Text(
+                            "Enfermedad más común",
+                            fontWeight = FontWeight.SemiBold,
+                            fontSize   = 14.sp,
+                            textAlign  = TextAlign.Center
+                        )
+                        Spacer(modifier = Modifier.height(10.dp))
+                        Text(
+                            enfermedad.ifBlank { "-" },
+                            fontSize   = 20.sp,
+                            fontWeight = FontWeight.Bold
+                        )
                     }
                 }
+
                 Spacer(modifier = Modifier.padding(10.dp))
                 Box(modifier = Modifier.weight(1f).fillMaxSize()){
                     Column(modifier = Modifier.fillMaxSize(), horizontalAlignment = Alignment.CenterHorizontally) {
-                        Text("Sexo más propenso",fontWeight = FontWeight.SemiBold, fontSize = 14.sp, textAlign = TextAlign.Center)
-                        Spacer(modifier = Modifier.padding(10.dp))
-                        val image2 = painterResource(id=R.drawable.varones)
-                        Image(
-                            painter = image2,
-                            contentDescription = null,
-                            contentScale = ContentScale.FillBounds,
-                            modifier = Modifier
-                                .size(150.dp)
-                                .clip(CircleShape)
-                                .border(2.dp, Color.Black, CircleShape)
+                        Text(
+                            "Sexo más propenso",
+                            fontWeight = FontWeight.SemiBold,
+                            fontSize   = 14.sp,
+                            textAlign  = TextAlign.Center
+                        )
+                        Spacer(modifier = Modifier.height(10.dp))
+                        Text(
+                            sexo.ifBlank { "-" },
+                            fontSize   = 20.sp,
+                            fontWeight = FontWeight.Bold
                         )
                     }
                 }
             }
             Box(modifier = Modifier.weight(2f).fillMaxSize()) {
                 Column(modifier = Modifier.fillMaxSize(), horizontalAlignment = Alignment.CenterHorizontally) {
-                    Text("Edad más propensa",fontWeight = FontWeight.SemiBold, fontSize = 14.sp, textAlign = TextAlign.Center)
-                    Spacer(modifier = Modifier.padding(10.dp))
-                    val image2 = painterResource(id=R.drawable.varones)
-                    Image(
-                        painter = image2,
-                        contentDescription = null,
-                        contentScale = ContentScale.FillBounds,
-                        modifier = Modifier
-                            .size(150.dp)
-                            .clip(CircleShape)
-                            .border(2.dp, Color.Black, CircleShape)
+                    Text(
+                        "Edad más propensa",
+                        fontWeight = FontWeight.SemiBold,
+                        fontSize   = 14.sp,
+                        textAlign  = TextAlign.Center
+                    )
+                    Spacer(modifier = Modifier.height(10.dp))
+                    Text(
+                        if (edadMin == 0 && edadMax == 0) "-"
+                        else "$edadMin años - $edadMax años",
+                        fontSize   = 20.sp,
+                        fontWeight = FontWeight.Bold
                     )
 
                 }
