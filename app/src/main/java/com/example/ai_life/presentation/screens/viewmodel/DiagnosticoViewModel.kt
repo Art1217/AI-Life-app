@@ -104,11 +104,13 @@ class DiagnosticoViewModel(
                 ).format(Date())
 
                 val registro = ConsultaHistorial(
-                    code      = consulta.code,
-                    diagnosis = etiqueta,
-                    timestamp = timestamp
+                    code       = consulta.code,
+                    bpm        = consulta.bpm,
+                    spo2       = consulta.spo2,
+                    temperatura= consulta.temperatura,
+                    diagnosis  = etiqueta,
+                    timestamp  = timestamp
                 )
-
                 val histRef = Firebase
                     .database
                     .reference
