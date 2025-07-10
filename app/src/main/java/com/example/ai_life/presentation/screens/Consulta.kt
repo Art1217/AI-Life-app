@@ -165,17 +165,22 @@ fun HistorialItem(
     h: ConsultaHistorial
 ) {
     Row(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 8.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
         Text("Fecha: ${h.timestamp}", Modifier.weight(1f))
         Button(
             onClick = {
                 val diagEnc = Uri.encode(h.diagnosis)
-                val tsEnc = Uri.encode(h.timestamp)
-                val tempF = h.temperatura.toFloat()
+                val recEnc  = Uri.encode(h.recommendation)
+                val tsEnc   = Uri.encode(h.timestamp)
+                val tempF   = h.temperatura.toFloat()
                 navController.navigate(
-                    "diagnosticoHistorial/${h.code}/${h.bpm}/${h.spo2}/$tempF/$diagEnc/$tsEnc"
+                    "diagnosticoHistorial/" +
+                            "${h.code}/${h.bpm}/${h.spo2}/$tempF/" +
+                            "$diagEnc/$recEnc/$tsEnc"
                 )
             },
             colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF040A7E)),
@@ -185,7 +190,7 @@ fun HistorialItem(
             Text("Ver", color = Color.White)
         }
     }
-    Divider(Modifier.padding(vertical = 12.dp))
+    Divider()
 }
 
 @Preview(showBackground = true)

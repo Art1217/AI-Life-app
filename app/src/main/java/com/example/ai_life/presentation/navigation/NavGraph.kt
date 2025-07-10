@@ -29,54 +29,57 @@ fun NavGraph() {
         composable(
             "diagnostico/{code}/{bpm}/{spo2}/{temp}",
             arguments = listOf(
-                navArgument("code"){ type = NavType.StringType },
+                navArgument("code") { type = NavType.StringType },
                 navArgument("bpm") { type = NavType.IntType },
-                navArgument("spo2"){ type = NavType.IntType },
-                navArgument("temp"){ type = NavType.FloatType }
+                navArgument("spo2") { type = NavType.IntType },
+                navArgument("temp") { type = NavType.FloatType }
             )
         ) { bc ->
             val code = bc.arguments!!.getString("code")!!
-            val bpm  = bc.arguments!!.getInt("bpm")
+            val bpm = bc.arguments!!.getInt("bpm")
             val spo2 = bc.arguments!!.getInt("spo2")
             val temp = bc.arguments!!.getFloat("temp")
             DiagnosticoScreen(
-                navController,
-                code = code,
-                bpm = bpm,
-                spo2 = spo2,
-                temp = temp,
-                savedDiagnosis = null,
-                savedTimestamp = null
+                navController       = navController,
+                code                = code,
+                bpm                 = bpm,
+                spo2                = spo2,
+                temp                = temp,
+                savedDiagnosis      = null,
+                savedTimestamp      = null,
+                savedRecommendation = null
             )
         }
 
-        // Ruta para modo lectura (botón Ver)
+        // Ruta para modo lectura (historial)
         composable(
-            "diagnosticoHistorial/{code}/{bpm}/{spo2}/{temp}/{diagnosis}/{timestamp}",
+            "diagnosticoHistorial/{code}/{bpm}/{spo2}/{temp}/{diagnosis}/{recommendation}/{timestamp}",
             arguments = listOf(
-                navArgument("code"){ type = NavType.StringType },
+                navArgument("code") { type = NavType.StringType },
                 navArgument("bpm") { type = NavType.IntType },
-                navArgument("spo2"){ type = NavType.IntType },
-                navArgument("temp"){ type = NavType.FloatType },
-                navArgument("diagnosis"){ type = NavType.StringType },
-                navArgument("timestamp"){ type = NavType.StringType }
+                navArgument("spo2") { type = NavType.IntType },
+                navArgument("temp") { type = NavType.FloatType },
+                navArgument("diagnosis") { type = NavType.StringType },
+                navArgument("recommendation") { type = NavType.StringType },
+                navArgument("timestamp") { type = NavType.StringType }
             )
         ) { bc ->
-            val code      = bc.arguments!!.getString("code")!!
-            val bpm       = bc.arguments!!.getInt("bpm")
-            val spo2      = bc.arguments!!.getInt("spo2")
-            val temp      = bc.arguments!!.getFloat("temp")
-            // Décodifica los parámetros que fueron URI-encoded
-            val diagnosis = Uri.decode(bc.arguments!!.getString("diagnosis")!!)
-            val timestamp = Uri.decode(bc.arguments!!.getString("timestamp")!!)
+            val code           = bc.arguments!!.getString("code")!!
+            val bpm            = bc.arguments!!.getInt("bpm")
+            val spo2           = bc.arguments!!.getInt("spo2")
+            val temp           = bc.arguments!!.getFloat("temp")
+            val diagnosis      = Uri.decode(bc.arguments!!.getString("diagnosis")!!)
+            val recommendation = Uri.decode(bc.arguments!!.getString("recommendation")!!)
+            val timestamp      = Uri.decode(bc.arguments!!.getString("timestamp")!!)
             DiagnosticoScreen(
-                navController,
-                code = code,
-                bpm = bpm,
-                spo2 = spo2,
-                temp = temp,
-                savedDiagnosis = diagnosis,
-                savedTimestamp = timestamp
+                navController       = navController,
+                code                = code,
+                bpm                 = bpm,
+                spo2                = spo2,
+                temp                = temp,
+                savedDiagnosis      = diagnosis,
+                savedTimestamp      = timestamp,
+                savedRecommendation = recommendation
             )
         }
         composable("consulta"){ConsultaScreen(navController)}

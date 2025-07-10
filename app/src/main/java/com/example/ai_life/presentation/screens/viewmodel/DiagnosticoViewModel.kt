@@ -92,6 +92,9 @@ class DiagnosticoViewModel(
                 _diagnosticoEtiqueta.value = etiqueta
                 Log.d(TAG, "Etiqueta mapeada: $etiqueta")
 
+                val recomendacion = Constants.DIAGNOSIS_RECOMMENDATIONS[etiqueta]
+                    ?: "[Consulta con su médico]"
+
                 // 5) Resultado final
                 _status.value = "Diagnóstico: $etiqueta"
                 Log.d(TAG, "Diagnóstico completado: $etiqueta")
@@ -109,6 +112,7 @@ class DiagnosticoViewModel(
                     spo2       = consulta.spo2,
                     temperatura= consulta.temperatura,
                     diagnosis  = etiqueta,
+                    recommendation = recomendacion,
                     timestamp  = timestamp
                 )
                 val histRef = Firebase

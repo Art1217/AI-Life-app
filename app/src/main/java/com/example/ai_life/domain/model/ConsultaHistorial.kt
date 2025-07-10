@@ -6,5 +6,6 @@ data class ConsultaHistorial(
     val spo2: Int = 0,
     val temperatura: Double = 0.0,
     val diagnosis: String = "",
+    val recommendation: String = "",
     val timestamp: String = ""
 )
